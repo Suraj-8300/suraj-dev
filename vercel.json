@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "main.py",
+      "use": "@vercel/python",
+      "config": { "maxLambdaSize": "15mb" }
+    },
+    {
+      "src": "static/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    { "src": "/static/(.*)", "dest": "/static/$1" },
+    { "src": "/(.*)", "dest": "main.py" }
+  ],
+  "env": {
+    "CONTACT_EMAIL":      "@contact_email",
+    "GMAIL_APP_PASSWORD": "@gmail_app_password",
+    "TO_EMAIL":           "@to_email",
+    "ADMIN_PASSWORD":     "@admin_password",
+    "SUPABASE_URL":       "@supabase_url",
+    "SUPABASE_KEY":       "@supabase_key"
+  }
+}

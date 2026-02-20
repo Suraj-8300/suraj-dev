@@ -1,0 +1,136 @@
+{
+  "meta": {
+    "name": "Suraj Dhere",
+    "title": "Suraj | Machine Learning Engineer",
+    "description": "Machine Learning Engineer",
+    "url": "https://suraj-portfolio.vercel.app",
+    "email": "surajdhere8300@gmail.com",
+    "location": "Nagpur, Maharashtra, India",
+    "available": true
+  },
+  "hero": {
+    "greeting": "Hey, I'm",
+    "name": "Suraj",
+    "tagline": "ML",
+    "subtitle": "NL",
+    "cta": "View My Work",
+    "resume_url": ""
+  },
+  "about": {
+    "bio": "ML",
+    "bio2": "<LML",
+    "fun_fact": "Coffee-fueled coder. Nagpur's finest ☕"
+  },
+  "skills": [
+    {
+      "name": "HTML",
+      "level": 90,
+      "color": "#e34f26"
+    },
+    {
+      "name": "CSS",
+      "level": 85,
+      "color": "#1572b6"
+    },
+    {
+      "name": "JavaScript",
+      "level": 88,
+      "color": "#f7df1e"
+    },
+    {
+      "name": "Python",
+      "level": 82,
+      "color": "#3776ab"
+    },
+    {
+      "name": "React",
+      "level": 80,
+      "color": "#61dafb"
+    },
+    {
+      "name": "FastAPI",
+      "level": 78,
+      "color": "#009688"
+    },
+    {
+      "name": "Node.js",
+      "level": 75,
+      "color": "#339933"
+    },
+    {
+      "name": "Git",
+      "level": 88,
+      "color": "#f05032"
+    },
+    {
+      "name": "PostgreSQL",
+      "level": 70,
+      "color": "#336791"
+    },
+    {
+      "name": "Docker",
+      "level": 62,
+      "color": "#2496ed"
+    },
+    {
+      "name": "Tailwind",
+      "level": 85,
+      "color": "#06b6d4"
+    },
+    {
+      "name": "MongoDB",
+      "level": 72,
+      "color": "#47a248"
+    }
+  ],
+  "projects": [
+    {
+      "id": 1,
+      "title": "Project Alpha",
+      "description": "ML",
+      "tech": [
+        "React",
+        "FastAPI",
+        "PostgreSQL"
+      ],
+      "github": "https://github.com/suraj-8300",
+      "demo": "https://github.com/suraj-8300",
+      "image": "",
+      "featured": true
+    },
+    {
+      "id": 2,
+      "title": "Project Beta",
+      "description": "A Python REST API with FastAPI, JWT auth, and Docker deployment for easy scaling.",
+      "tech": [
+        "Python",
+        "FastAPI",
+        "Docker"
+      ],
+      "github": "https://github.com/suraj-8300",
+      "demo": "https://github.com/suraj-8300",
+      "image": "",
+      "featured": true
+    },
+    {
+      "id": 3,
+      "title": "Project Gamma",
+      "description": "An open-source CLI tool that automates repetitive dev tasks. 100+ GitHub stars.",
+      "tech": [
+        "Python",
+        "Click",
+        "PyPI"
+      ],
+      "github": "https://github.com/suraj-8300",
+      "demo": "https://github.com/suraj-8300",
+      "image": "",
+      "featured": false
+    }
+  ],
+  "social": {
+    "github": "https://github.com/suraj-8300",
+    "linkedin": "https://linkedin.com/in/surajdhere8300",
+    "twitter": "https://x.com/surajdhere144",
+    "instagram": ""
+  }
+}

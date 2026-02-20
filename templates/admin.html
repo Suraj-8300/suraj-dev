@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Portfolio CMS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #020817;
+      --surface:      #0f172a;
+      --surface-2:    #111827;
+      --border:       #1e293b;
+      --border-hover: #334155;
+      --text:         #f1f5f9;
+      --muted:        #64748b;
+      --accent:       #6366f1;
+      --accent-hover: #4f46e5;
+      --accent-glow:  rgba(99,102,241,0.15);
+      --success:      #22c55e;
+      --danger:       #ef4444;
+      --warning:      #f59e0b;
+      --radius:       0.75rem;
+      --radius-sm:    0.5rem;
+    }
+
+    html { height: 100%; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 0.9rem; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+    /* ─── SCROLLBAR ─── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 9999px; }
+
+    /* ─── LOGIN ─── */
+    #login-screen {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      padding: 1rem;
+      background: radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.12) 0%, transparent 70%);
+    }
+    .login-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 1.25rem; padding: 2.5rem; width: 100%; max-width: 24rem;
+      box-shadow: 0 0 60px rgba(99,102,241,0.08);
+    }
+    .login-icon { font-size: 2.5rem; text-align: center; margin-bottom: 1.25rem; }
+    .login-card h1 { font-size: 1.5rem; font-weight: 700; text-align: center; margin-bottom: 0.25rem; }
+    .login-card .sub { color: var(--muted); font-size: 0.8rem; text-align: center; margin-bottom: 2rem; }
+    #pw-err { color: #f87171; font-size: 0.75rem; text-align: center; margin-top: 0.75rem; display: none; padding: 0.6rem; background: rgba(239,68,68,0.08); border-radius: var(--radius-sm); border: 1px solid rgba(239,68,68,0.2); }
+    .login-footer { text-align: center; margin-top: 1.5rem; color: var(--muted); font-size: 0.75rem; }
+
+    /* ─── ADMIN PANEL ─── */
+    #admin-panel { display: none; min-height: 100vh; flex-direction: column; }
+
+    /* ─── HEADER ─── */
+    .admin-header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(2,8,23,0.9); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem; height: 56px;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .header-left { display: flex; align-items: center; gap: 0.75rem; }
+    .header-logo { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.95rem; background: linear-gradient(135deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 6px var(--success); animation: pulse-dot 2s infinite; }
+    @keyframes pulse-dot { 0%,100%{opacity:1}50%{opacity:0.4} }
+    .status-label { font-size: 0.7rem; color: var(--success); }
+    .header-right { display: flex; align-items: center; gap: 0.6rem; }
+    .header-link { color: var(--muted); font-size: 0.8rem; text-decoration: none; padding: 0.3rem 0.6rem; border-radius: var(--radius-sm); transition: all 0.15s; }
+    .header-link:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+    .unsaved-badge { font-size: 0.65rem; background: rgba(245,158,11,0.15); color: var(--warning); padding: 0.15rem 0.5rem; border-radius: 9999px; border: 1px solid rgba(245,158,11,0.3); display: none; }
+    .unsaved-badge.show { display: inline-flex; }
+
+    /* ─── BODY ─── */
+    .admin-body { display: flex; flex: 1; overflow: hidden; }
+
+    /* ─── SIDEBAR ─── */
+    .sidebar {
+      width: 13rem; border-right: 1px solid var(--border);
+      padding: 1.25rem 0.75rem;
+      position: sticky; top: 56px; height: calc(100vh - 56px);
+      overflow-y: auto; flex-shrink: 0;
+      background: rgba(15,23,42,0.5);
+    }
+    .sidebar-section { font-size: 0.65rem; font-family: 'JetBrains Mono', monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; padding: 0 0.75rem; margin-bottom: 0.4rem; margin-top: 1rem; }
+    .sidebar-section:first-child { margin-top: 0; }
+    .sidebar-btn {
+      display: flex; align-items: center; gap: 0.6rem;
+      width: 100%; text-align: left; padding: 0.55rem 0.75rem;
+      border-radius: var(--radius-sm); font-size: 0.85rem; color: var(--muted);
+      background: none; border: none; cursor: pointer; transition: all 0.15s;
+      margin-bottom: 1px; font-family: inherit;
+    }
+    .sidebar-btn .nav-icon { font-size: 0.95rem; width: 1.2rem; text-align: center; }
+    .sidebar-btn:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+    .sidebar-btn.active { color: #c7d2fe; background: var(--accent-glow); border: 1px solid rgba(99,102,241,0.2); }
+    .sidebar-btn .count { margin-left: auto; font-size: 0.65rem; background: var(--border); color: var(--muted); padding: 0.1rem 0.4rem; border-radius: 9999px; }
+
+    /* ─── MAIN ─── */
+    .main { flex: 1; padding: 2rem; overflow-y: auto; max-height: calc(100vh - 56px); }
+    .tab-content { display: none; animation: fadeIn 0.2s ease; }
+    .tab-content.active { display: block; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+    .page-header { margin-bottom: 1.75rem; }
+    .page-header h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.2rem; }
+    .page-header p { color: var(--muted); font-size: 0.82rem; }
+
+    /* ─── CARD ─── */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1rem;
+      transition: border-color 0.2s;
+    }
+    .card:hover { border-color: var(--border-hover); }
+    .card-title { font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem; }
+    .card-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* ─── GRID ─── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+    .col-2 { grid-column: span 2; }
+
+    /* ─── FORM ELEMENTS ─── */
+    .field { display: flex; flex-direction: column; gap: 0.35rem; }
+    label { font-size: 0.72rem; color: var(--muted); font-weight: 500; letter-spacing: 0.02em; }
+    input, textarea, select {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 0.6rem 0.85rem;
+      color: var(--text); font-size: 0.875rem; font-family: inherit;
+      width: 100%; transition: border 0.15s, box-shadow 0.15s;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none; border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.6; }
+    textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+    input[type="checkbox"] { width: 1rem; height: 1rem; accent-color: var(--accent); cursor: pointer; }
+    .checkbox-row { display: flex; align-items: center; gap: 0.6rem; }
+    .checkbox-row label { font-size: 0.875rem; color: var(--text); margin: 0; font-weight: 400; cursor: pointer; }
+
+    /* ─── BUTTONS ─── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.6rem 1.2rem; border-radius: var(--radius-sm);
+      font-size: 0.875rem; font-weight: 600; cursor: pointer; border: none;
+      transition: all 0.15s; font-family: inherit; white-space: nowrap;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: white; box-shadow: 0 0 20px rgba(99,102,241,0.3); }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); box-shadow: 0 0 28px rgba(99,102,241,0.45); }
+    .btn-danger { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
+    .btn-danger:hover { background: rgba(239,68,68,0.2); }
+    .btn-ghost { background: rgba(255,255,255,0.04); color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { color: var(--text); border-color: var(--border-hover); background: rgba(255,255,255,0.07); }
+    .btn-sm { padding: 0.4rem 0.85rem; font-size: 0.8rem; }
+    .btn-xs { padding: 0.25rem 0.6rem; font-size: 0.75rem; }
+    .btn-icon { padding: 0.4rem; border-radius: var(--radius-sm); background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--muted); cursor: pointer; transition: all 0.15s; font-size: 0.9rem; line-height: 1; }
+    .btn-icon:hover { color: var(--text); border-color: var(--border-hover); }
+
+    /* ─── SKILL ITEM ─── */
+    .skill-item {
+      display: flex; gap: 0.75rem; align-items: flex-end;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.1rem; margin-bottom: 0.6rem;
+      transition: border-color 0.2s;
+    }
+    .skill-item:hover { border-color: var(--border-hover); }
+    .skill-item .fields { flex: 1; display: grid; grid-template-columns: 1fr 120px 110px; gap: 0.75rem; align-items: end; }
+    .skill-color-preview { width: 2rem; height: 2.15rem; border-radius: var(--radius-sm); border: 1px solid var(--border); cursor: pointer; padding: 2px; flex-shrink: 0; }
+
+    /* ─── PROJECT ITEM ─── */
+    .project-item {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1rem;
+      transition: border-color 0.2s;
+    }
+    .project-item:hover { border-color: var(--border-hover); }
+    .project-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+    .project-item-header h3 { font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
+    .featured-tag { font-size: 0.65rem; background: rgba(99,102,241,0.15); color: #a5b4fc; padding: 0.15rem 0.5rem; border-radius: 9999px; border: 1px solid rgba(99,102,241,0.3); }
+
+    /* ─── ADD BUTTON ROW ─── */
+    .add-row { margin-top: 0.75rem; }
+
+    /* ─── TOAST ─── */
+    #toast {
+      position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999;
+      display: flex; align-items: center; gap: 0.6rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 0.85rem 1.25rem;
+      font-size: 0.875rem; font-weight: 500;
+      transform: translateY(6rem) scale(0.95); opacity: 0;
+      transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      pointer-events: none; max-width: 22rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    #toast.show { transform: translateY(0) scale(1); opacity: 1; }
+    #toast.success { border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.06); }
+    #toast.error { border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.06); }
+    #toast.info { border-color: rgba(99,102,241,0.4); background: var(--accent-glow); }
+    .toast-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .toast-msg { color: var(--text); }
+
+    /* ─── EMPTY STATE ─── */
+    .empty-state { text-align: center; padding: 3rem; color: var(--muted); border: 2px dashed var(--border); border-radius: var(--radius); }
+    .empty-state p { margin-top: 0.5rem; font-size: 0.85rem; }
+
+    /* ─── LOADING ─── */
+    .loading-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── DIVIDER ─── */
+    .sep { height: 1px; background: var(--border); margin: 1.25rem 0; }
+
+    /* ─── SAVE BAR (bottom) ─── */
+    .save-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 99;
+      background: rgba(2,8,23,0.95); backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border);
+      padding: 0.75rem 1.5rem;
+      display: none; align-items: center; justify-content: space-between;
+      gap: 1rem;
+    }
+    .save-bar.show { display: flex; }
+    .save-bar-msg { font-size: 0.8rem; color: var(--warning); display: flex; align-items: center; gap: 0.4rem; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main { padding: 1rem; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .col-2 { grid-column: span 1; }
+      .skill-item .fields { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════ LOGIN ══════════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-icon">🔐</div>
+    <h1>Portfolio CMS</h1>
+    <p class="sub">Sign in to manage your portfolio content</p>
+    <div class="field">
+      <label for="pw-input">Admin Password</label>
+      <input type="password" id="pw-input" placeholder="••••••••••••" autocomplete="current-password" />
+    </div>
+    <p id="pw-err">Incorrect password. Try again.</p>
+    <div style="margin-top:1.25rem">
+      <button id="login-btn" class="btn btn-primary" style="width:100%;justify-content:center;padding:0.75rem">
+        Sign In →
+      </button>
+    </div>
+    <p class="login-footer">🔒 Secure admin access only</p>
+  </div>
+</div>
+
+<!-- ══════════════════ ADMIN PANEL ══════════════════ -->
+<div id="admin-panel" style="display:none;flex-direction:column">
+
+  <!-- Header -->
+  <div class="admin-header">
+    <div class="header-left" style="gap:1rem">
+      <span class="header-logo">⚙ CMS</span>
+      <div style="display:flex;align-items:center;gap:0.4rem">
+        <div class="status-dot"></div>
+        <span class="status-label">Live</span>
+      </div>
+      <span class="unsaved-badge" id="unsaved-badge">● Unsaved changes</span>
+    </div>
+    <div class="header-right">
+      <a href="/" target="_blank" class="header-link">View Site ↗</a>
+      <button id="save-btn" class="btn btn-primary btn-sm">
+        <span id="save-label">💾 Save</span>
+      </button>
+      <button id="logout-btn" class="btn btn-ghost btn-sm">Logout</button>
+    </div>
+  </div>
+
+  <div class="admin-body">
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="sidebar-section">Content</div>
+      <button class="sidebar-btn active" data-tab="meta"><span class="nav-icon">🪪</span> Meta & Info</button>
+      <button class="sidebar-btn" data-tab="hero"><span class="nav-icon">🏠</span> Hero</button>
+      <button class="sidebar-btn" data-tab="about"><span class="nav-icon">👤</span> About</button>
+
+      <div class="sidebar-section">Portfolio</div>
+      <button class="sidebar-btn" data-tab="skills"><span class="nav-icon">⚡</span> Skills <span class="count" id="skills-count">0</span></button>
+      <button class="sidebar-btn" data-tab="projects"><span class="nav-icon">🚀</span> Projects <span class="count" id="projects-count">0</span></button>
+
+      <div class="sidebar-section">Links</div>
+      <button class="sidebar-btn" data-tab="social"><span class="nav-icon">🔗</span> Social</button>
+    </nav>
+
+    <!-- Main content -->
+    <div class="main" id="main-scroll">
+
+      <!-- ── META ── -->
+      <div class="tab-content active" id="tab-meta">
+        <div class="page-header">
+          <h2>Meta & Info</h2>
+          <p>Basic identity and SEO information shown across the site</p>
+        </div>
+        <div class="card">
+          <div class="card-title">Identity</div>
+          <div class="grid-2" style="gap:1rem">
+            <div class="field"><label>Your Name</label><input id="f-meta-name" placeholder="Suraj Dhere" /></div>
+            <div class="field"><label>Page Title (browser tab)</label><input id="f-meta-title" placeholder="Suraj | ML Engineer" /></div>
+            <div class="field col-2"><label>SEO Description</label><input id="f-meta-description" placeholder="Machine Learning Engineer based in Nagpur..." /></div>
+            <div class="field"><label>Site URL</label><input id="f-meta-url" placeholder="https://yoursite.vercel.app" /></div>
+            <div class="field"><label>Email</label><input id="f-meta-email" placeholder="you@gmail.com" /></div>
+            <div class="field col-2"><label>Location</label><input id="f-meta-location" placeholder="Nagpur, Maharashtra, India" /></div>
+            <div class="checkbox-row col-2">
+              <input type="checkbox" id="f-meta-available" />
+              <label for="f-meta-available">Show "Available for work" badge on hero section</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── HERO ── -->
+      <div class="tab-content" id="tab-hero">
+        <div class="page-header">
+          <h2>Hero Section</h2>
+          <p>The first thing visitors see — make it count</p>
+        </div>
+        <div class="card">
+          <div class="card-title">Headline</div>
+          <div class="grid-2" style="gap:1rem">
+            <div class="field"><label>Greeting text</label><input id="f-hero-greeting" placeholder="Hey, I'm" /></div>
+            <div class="field"><label>Big name / Display name</label><input id="f-hero-name" placeholder="Suraj" /></div>
+            <div class="field col-2"><label>Tagline (role/specialization)</label><input id="f-hero-tagline" placeholder="Machine Learning Engineer" /></div>
+            <div class="field col-2"><label>Subtitle (short one-liner bio)</label><input id="f-hero-subtitle" placeholder="I build things with Python and ML..." /></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Call to Action</div>
+          <div class="grid-2" style="gap:1rem">
+            <div class="field"><label>CTA Button Text</label><input id="f-hero-cta" placeholder="View My Work" /></div>
+            <div class="field"><label>Resume URL (leave blank to hide)</label><input id="f-hero-resume" placeholder="https://drive.google.com/..." /></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ABOUT ── -->
+      <div class="tab-content" id="tab-about">
+        <div class="page-header">
+          <h2>About Section</h2>
+          <p>Tell visitors who you are — keep it human and personal</p>
+        </div>
+        <div class="card">
+          <div class="card-title">Bio</div>
+          <div style="display:flex;flex-direction:column;gap:1rem">
+            <div class="field"><label>Paragraph 1</label><textarea id="f-about-bio" rows="3" placeholder="I'm a passionate ML engineer..."></textarea></div>
+            <div class="field"><label>Paragraph 2</label><textarea id="f-about-bio2" rows="3" placeholder="Outside of work, I..."></textarea></div>
+            <div class="field"><label>Fun Fact (shown as a badge)</label><input id="f-about-fact" placeholder="Coffee-fueled coder. Nagpur's finest ☕" /></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SKILLS ── -->
+      <div class="tab-content" id="tab-skills">
+        <div class="page-header">
+          <h2>Skills</h2>
+          <p>Technologies and tools shown in your skills section with progress bars</p>
+        </div>
+        <div id="skills-list"></div>
+        <div class="add-row">
+          <button id="add-skill-btn" class="btn btn-ghost">+ Add Skill</button>
+        </div>
+      </div>
+
+      <!-- ── PROJECTS ── -->
+      <div class="tab-content" id="tab-projects">
+        <div class="page-header">
+          <h2>Projects</h2>
+          <p>Showcase your best work — featured projects appear first</p>
+        </div>
+        <div id="projects-list"></div>
+        <div class="add-row">
+          <button id="add-project-btn" class="btn btn-ghost">+ Add Project</button>
+        </div>
+      </div>
+
+      <!-- ── SOCIAL ── -->
+      <div class="tab-content" id="tab-social">
+        <div class="page-header">
+          <h2>Social Links</h2>
+          <p>Leave blank to hide any link from the site</p>
+        </div>
+        <div class="card">
+          <div class="card-title">Profiles</div>
+          <div style="display:flex;flex-direction:column;gap:1rem">
+            <div class="field">
+              <label>GitHub URL</label>
+              <input id="f-social-github" placeholder="https://github.com/username" />
+            </div>
+            <div class="field">
+              <label>LinkedIn URL</label>
+              <input id="f-social-linkedin" placeholder="https://linkedin.com/in/username" />
+            </div>
+            <div class="field">
+              <label>Twitter / X URL</label>
+              <input id="f-social-twitter" placeholder="https://x.com/username" />
+            </div>
+            <div class="field">
+              <label>Instagram URL (optional)</label>
+              <input id="f-social-instagram" placeholder="https://instagram.com/username" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end main -->
+  </div><!-- end admin-body -->
+</div><!-- end admin-panel -->
+
+<!-- Save Bar -->
+<div class="save-bar" id="save-bar">
+  <div class="save-bar-msg">● You have unsaved changes</div>
+  <button class="btn btn-primary btn-sm" onclick="saveAll()">💾 Save Now</button>
+</div>
+
+<!-- Toast -->
+<div id="toast">
+  <span class="toast-icon" id="toast-icon"></span>
+  <span class="toast-msg" id="toast-msg"></span>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════
+let siteData = {};
+let token = '';
+let isDirty = false;
+
+function markDirty() {
+  if (!isDirty) {
+    isDirty = true;
+    document.getElementById('unsaved-badge').classList.add('show');
+    document.getElementById('save-bar').classList.add('show');
+  }
+}
+function markClean() {
+  isDirty = false;
+  document.getElementById('unsaved-badge').classList.remove('show');
+  document.getElementById('save-bar').classList.remove('show');
+}
+
+// ══════════════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════════════
+document.getElementById('login-btn').addEventListener('click', doLogin);
+document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+async function doLogin() {
+  const pw = document.getElementById('pw-input').value.trim();
+  if (!pw) return;
+  const btn = document.getElementById('login-btn');
+  btn.innerHTML = '<span class="loading-spinner"></span> Signing in...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw })
+    });
+    const data = await res.json();
+    if (res.ok && data.token) {
+      token = data.token;
+      sessionStorage.setItem('admin_token', token);
+      showAdmin();
+    } else {
+      const err = document.getElementById('pw-err');
+      err.style.display = 'block';
+      document.getElementById('pw-input').value = '';
+      document.getElementById('pw-input').focus();
+    }
+  } catch(e) {
+    const err = document.getElementById('pw-err');
+    err.textContent = 'Server error. Make sure the app is running.';
+    err.style.display = 'block';
+  } finally {
+    btn.innerHTML = 'Sign In →';
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('logout-btn').addEventListener('click', () => {
+  sessionStorage.removeItem('admin_token');
+  location.reload();
+});
+
+function showAdmin() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('admin-panel').style.display = 'flex';
+  loadData();
+}
+
+const savedToken = sessionStorage.getItem('admin_token');
+if (savedToken) { token = savedToken; showAdmin(); }
+
+// ══════════════════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════════════════
+document.querySelectorAll('.sidebar-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    document.getElementById('main-scroll').scrollTop = 0;
+  });
+});
+
+// ══════════════════════════════════════════════════
+//  LOAD DATA
+// ══════════════════════════════════════════════════
+async function loadData() {
+  try {
+    const res = await fetch('/api/admin/data', { headers: { 'X-Admin-Token': token } });
+    if (res.status === 403) { sessionStorage.removeItem('admin_token'); location.reload(); return; }
+    siteData = await res.json();
+    populate();
+    updateCounts();
+  } catch(e) {
+    toast('Could not load data from server.', 'error');
+  }
+}
+
+function populate() {
+  const m = siteData.meta   || {};
+  const h = siteData.hero   || {};
+  const a = siteData.about  || {};
+  const s = siteData.social || {};
+
+  set('f-meta-name', m.name); set('f-meta-title', m.title);
+  set('f-meta-description', m.description); set('f-meta-url', m.url);
+  set('f-meta-email', m.email); set('f-meta-location', m.location);
+  document.getElementById('f-meta-available').checked = !!m.available;
+
+  set('f-hero-greeting', h.greeting); set('f-hero-name', h.name);
+  set('f-hero-tagline', h.tagline); set('f-hero-subtitle', h.subtitle);
+  set('f-hero-cta', h.cta); set('f-hero-resume', h.resume_url);
+
+  set('f-about-bio', a.bio); set('f-about-bio2', a.bio2);
+  set('f-about-fact', a.fun_fact);
+
+  set('f-social-github', s.github); set('f-social-linkedin', s.linkedin);
+  set('f-social-twitter', s.twitter); set('f-social-instagram', s.instagram);
+
+  renderSkills();
+  renderProjects();
+
+  // Mark dirty on any change
+  document.querySelectorAll('input:not([type=checkbox]), textarea').forEach(el => {
+    el.addEventListener('input', markDirty, { once: true });
+  });
+  document.querySelectorAll('input[type=checkbox]').forEach(el => {
+    el.addEventListener('change', markDirty, { once: true });
+  });
+}
+
+function updateCounts() {
+  document.getElementById('skills-count').textContent = (siteData.skills || []).length;
+  document.getElementById('projects-count').textContent = (siteData.projects || []).length;
+}
+
+function set(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.value = val ?? '';
+}
+
+// ══════════════════════════════════════════════════
+//  SKILLS
+// ══════════════════════════════════════════════════
+function renderSkills() {
+  const list = document.getElementById('skills-list');
+  const skills = siteData.skills || [];
+
+  if (skills.length === 0) {
+    list.innerHTML = `<div class="empty-state">⚡ No skills yet<p>Click "Add Skill" to get started</p></div>`;
+    return;
+  }
+
+  list.innerHTML = '';
+  skills.forEach((skill, i) => {
+    const div = document.createElement('div');
+    div.className = 'skill-item';
+    div.innerHTML = `
+      <div class="fields">
+        <div class="field">
+          <label>Skill Name</label>
+          <input value="${esc(skill.name)}" data-i="${i}" data-key="name" class="skill-input" placeholder="e.g. Python" />
+        </div>
+        <div class="field">
+          <label>Level (0–100)</label>
+          <input type="number" min="0" max="100" value="${skill.level}" data-i="${i}" data-key="level" class="skill-input" />
+        </div>
+        <div class="field">
+          <label>Color</label>
+          <input value="${esc(skill.color)}" data-i="${i}" data-key="color" class="skill-input" style="font-family:monospace;font-size:0.8rem" placeholder="#6366f1" />
+        </div>
+      </div>
+      <input type="color" class="skill-color-preview" value="${esc(skill.color)}" data-i="${i}" title="Pick color" />
+      <button class="btn btn-danger btn-sm remove-skill" data-i="${i}" style="flex-shrink:0">✕</button>`;
+    list.appendChild(div);
+  });
+
+  list.querySelectorAll('.skill-input').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const i = +e.target.dataset.i, key = e.target.dataset.key;
+      siteData.skills[i][key] = key === 'level' ? (parseInt(e.target.value) || 0) : e.target.value;
+      if (key === 'color') {
+        const picker = list.querySelectorAll('.skill-color-preview')[i];
+        if (picker) picker.value = e.target.value;
+      }
+      markDirty();
+    });
+  });
+
+  list.querySelectorAll('.skill-color-preview').forEach(picker => {
+    picker.addEventListener('input', e => {
+      const i = +e.target.dataset.i;
+      siteData.skills[i].color = e.target.value;
+      const textInput = list.querySelectorAll('.skill-input[data-key="color"]')[i];
+      if (textInput) textInput.value = e.target.value;
+      markDirty();
+    });
+  });
+
+  list.querySelectorAll('.remove-skill').forEach(btn => {
+    btn.addEventListener('click', e => {
+      siteData.skills.splice(+e.target.dataset.i, 1);
+      renderSkills(); updateCounts(); markDirty();
+    });
+  });
+}
+
+document.getElementById('add-skill-btn').addEventListener('click', () => {
+  siteData.skills = siteData.skills || [];
+  siteData.skills.push({ name: 'New Skill', level: 75, color: '#6366f1' });
+  renderSkills(); updateCounts(); markDirty();
+  document.getElementById('skills-list').lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
+
+// ══════════════════════════════════════════════════
+//  PROJECTS
+// ══════════════════════════════════════════════════
+function renderProjects() {
+  const list = document.getElementById('projects-list');
+  const projects = siteData.projects || [];
+
+  if (projects.length === 0) {
+    list.innerHTML = `<div class="empty-state">🚀 No projects yet<p>Click "Add Project" to get started</p></div>`;
+    return;
+  }
+
+  list.innerHTML = '';
+  projects.forEach((p, i) => {
+    const div = document.createElement('div');
+    div.className = 'project-item';
+    div.innerHTML = `
+      <div class="project-item-header">
+        <h3>
+          ${esc(p.title || 'Untitled Project')}
+          ${p.featured ? '<span class="featured-tag">★ Featured</span>' : ''}
+        </h3>
+        <button class="btn btn-danger btn-sm remove-project" data-i="${i}">✕ Remove</button>
+      </div>
+      <div class="grid-2" style="gap:1rem;margin-bottom:1rem">
+        <div class="field"><label>Project Title</label><input data-i="${i}" data-key="title" class="proj-input" value="${esc(p.title)}" placeholder="My Awesome Project" /></div>
+        <div class="field"><label>Image path (e.g. /static/images/p1.webp)</label><input data-i="${i}" data-key="image" class="proj-input" value="${esc(p.image)}" placeholder="/static/images/project.webp" /></div>
+        <div class="field"><label>GitHub URL</label><input data-i="${i}" data-key="github" class="proj-input" value="${esc(p.github)}" placeholder="https://github.com/..." /></div>
+        <div class="field"><label>Live Demo URL (optional)</label><input data-i="${i}" data-key="demo" class="proj-input" value="${esc(p.demo)}" placeholder="https://yourapp.vercel.app" /></div>
+      </div>
+      <div class="field" style="margin-bottom:1rem">
+        <label>Description</label>
+        <textarea data-i="${i}" data-key="description" class="proj-input" rows="2" placeholder="What this project does and why it matters...">${esc(p.description)}</textarea>
+      </div>
+      <div class="grid-2" style="gap:1rem">
+        <div class="field">
+          <label>Tech Stack (comma separated)</label>
+          <input data-i="${i}" data-key="tech" class="proj-input proj-tech" value="${(p.tech||[]).join(', ')}" placeholder="React, Python, FastAPI" />
+        </div>
+        <div class="checkbox-row" style="padding-top:1.4rem">
+          <input type="checkbox" data-i="${i}" data-key="featured" class="proj-input proj-check" id="feat-${i}" ${p.featured ? 'checked' : ''} />
+          <label for="feat-${i}">Mark as featured project</label>
+        </div>
+      </div>`;
+    list.appendChild(div);
+  });
+
+  list.querySelectorAll('.proj-input').forEach(inp => {
+    const evtName = (inp.tagName === 'TEXTAREA' || inp.type === 'text' || inp.type === '') ? 'input' : 'change';
+    inp.addEventListener(evtName, e => {
+      const i = +e.target.dataset.i, key = e.target.dataset.key;
+      if (e.target.classList.contains('proj-tech')) {
+        siteData.projects[i][key] = e.target.value.split(',').map(t => t.trim()).filter(Boolean);
+      } else if (e.target.classList.contains('proj-check')) {
+        siteData.projects[i][key] = e.target.checked;
+      } else {
+        siteData.projects[i][key] = e.target.value;
+      }
+      markDirty();
+      if (key === 'title' || key === 'featured') renderProjects(); // refresh header
+    });
+  });
+
+  list.querySelectorAll('.remove-project').forEach(btn => {
+    btn.addEventListener('click', e => {
+      siteData.projects.splice(+e.target.dataset.i, 1);
+      renderProjects(); updateCounts(); markDirty();
+    });
+  });
+}
+
+document.getElementById('add-project-btn').addEventListener('click', () => {
+  siteData.projects = siteData.projects || [];
+  siteData.projects.push({ id: Date.now(), title: 'New Project', description: 'Describe your project here.', tech: [], github: '', demo: '', image: '', featured: false });
+  renderProjects(); updateCounts(); markDirty();
+  document.getElementById('projects-list').lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
+
+// ══════════════════════════════════════════════════
+//  SAVE
+// ══════════════════════════════════════════════════
+document.getElementById('save-btn').addEventListener('click', saveAll);
+
+async function saveAll() {
+  // Collect latest field values
+  siteData.meta = {
+    name:        get('f-meta-name'),
+    title:       get('f-meta-title'),
+    description: get('f-meta-description'),
+    url:         get('f-meta-url'),
+    email:       get('f-meta-email'),
+    location:    get('f-meta-location'),
+    available:   document.getElementById('f-meta-available').checked
+  };
+  siteData.hero = {
+    greeting:   get('f-hero-greeting'),
+    name:       get('f-hero-name'),
+    tagline:    get('f-hero-tagline'),
+    subtitle:   get('f-hero-subtitle'),
+    cta:        get('f-hero-cta'),
+    resume_url: get('f-hero-resume')
+  };
+  siteData.about = {
+    bio:      get('f-about-bio'),
+    bio2:     get('f-about-bio2'),
+    fun_fact: get('f-about-fact')
+  };
+  siteData.social = {
+    github:    get('f-social-github'),
+    linkedin:  get('f-social-linkedin'),
+    twitter:   get('f-social-twitter'),
+    instagram: get('f-social-instagram')
+  };
+
+  const btn = document.getElementById('save-btn');
+  const label = document.getElementById('save-label');
+  label.innerHTML = '<span class="loading-spinner"></span>';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/admin/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token },
+      body: JSON.stringify(siteData)
+    });
+    if (res.ok) {
+      markClean();
+      toast('Changes saved and live instantly! 🎉', 'success');
+    } else if (res.status === 403) {
+      toast('Session expired — please log in again.', 'error');
+      sessionStorage.removeItem('admin_token');
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      const errData = await res.json().catch(() => ({}));
+      toast(errData.detail || 'Save failed. Check Supabase config.', 'error');
+    }
+  } catch(e) {
+    toast('Network error — check your connection.', 'error');
+  } finally {
+    label.innerHTML = '💾 Save';
+    btn.disabled = false;
+  }
+}
+
+// Warn before leaving with unsaved changes
+window.addEventListener('beforeunload', e => {
+  if (isDirty) { e.preventDefault(); e.returnValue = ''; }
+});
+
+// ══════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════
+function get(id) { return document.getElementById(id)?.value ?? ''; }
+function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function toast(msg, type = 'success') {
+  const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+  document.getElementById('toast-icon').textContent = icons[type] || '';
+  document.getElementById('toast-msg').textContent = msg;
+  const el = document.getElementById('toast');
+  el.className = 'show ' + type;
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => el.className = '', 4500);
+}
+</script>
+</body>
+</html>
