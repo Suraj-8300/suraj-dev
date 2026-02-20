@@ -23,6 +23,9 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from pathlib import Path
 from typing import Optional
+from datetime import datetime
+
+current_year = datetime.now().year
 
 # ── App setup ──────────────────────────────────────────────────────────────
 app = FastAPI(title="Suraj Portfolio")
